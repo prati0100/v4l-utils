@@ -20,6 +20,7 @@ libv4l2subdev_la_LIBADD = libmediactl.la
 mediactl_includedir=$(includedir)/mediactl
 noinst_HEADERS = mediactl.h v4l2subdev.h
 
+pkgconfig_DATA = libmediactl.pc
 bin_PROGRAMS = media-ctl
 media_ctl_SOURCES = media-ctl.c options.c options.h tools.h
 media_ctl_LDADD = libmediactl.la libv4l2subdev.la
