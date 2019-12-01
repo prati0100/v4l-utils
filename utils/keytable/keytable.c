@@ -53,6 +53,11 @@
 
 # define N_(string) string
 
+#ifndef input_event_sec
+#define input_event_sec time.tv_sec
+#define input_event_usec time.tv_usec
+#endif
+
 struct input_keymap_entry_v2 {
 #define KEYMAP_BY_INDEX	(1 << 0)
 	u_int8_t  flags;
@@ -1533,7 +1538,7 @@ static void test_event(struct rc_device *rc_dev, int fd)
 
 		for (i = 0; i < rd / sizeof(struct input_event); i++) {
 			printf(_("%ld.%06ld: event type %s(0x%02x)"),
-				ev[i].time.tv_sec, ev[i].time.tv_usec,
+				ev[i].input_event_sec, ev[i].input_event_usec,
 				get_event_name(events_type, ev[i].type), ev[i].type);
 
 			switch (ev[i].type) {
