@@ -81,6 +81,8 @@ static struct option long_options[] = {
 	{"get-fmt-video-out", no_argument, 0, OptGetVideoOutFormat},
 	{"set-fmt-video-out", required_argument, 0, OptSetVideoOutFormat},
 	{"try-fmt-video-out", required_argument, 0, OptTryVideoOutFormat},
+	{"set-routing", required_argument, 0, OptSetRouting},
+	{"get-routing", no_argument, 0, OptGetRouting},
 	{"help", no_argument, 0, OptHelp},
 	{"help-tuner", no_argument, 0, OptHelpTuner},
 	{"help-io", no_argument, 0, OptHelpIO},
