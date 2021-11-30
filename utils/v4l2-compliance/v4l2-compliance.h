@@ -321,10 +321,10 @@ int testEncIndex(struct node *node);
 int testDecoder(struct node *node);
 
 // SubDev ioctl tests
-int testSubDevEnum(struct node *node, unsigned which, unsigned pad);
-int testSubDevFormat(struct node *node, unsigned which, unsigned pad);
-int testSubDevSelection(struct node *node, unsigned which, unsigned pad);
-int testSubDevFrameInterval(struct node *node, unsigned pad);
+int testSubDevEnum(struct node *node, unsigned which, unsigned pad, unsigned stream);
+int testSubDevFormat(struct node *node, unsigned which, unsigned pad, unsigned stream);
+int testSubDevSelection(struct node *node, unsigned which, unsigned pad, unsigned stream);
+int testSubDevFrameInterval(struct node *node, unsigned pad, unsigned stream);
 
 // Buffer ioctl tests
 int testReqBufs(struct node *node);

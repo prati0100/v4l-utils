@@ -44,6 +44,7 @@ static int testSubDevEnumFrameInterval(struct node *node, unsigned which,
 	memset(&fie, 0, sizeof(fie));
 	fie.which = which;
 	fie.pad = pad;
+	fie.stream = 0;
 	fie.code = code;
 	fie.width = width;
 	fie.height = height;
@@ -73,6 +74,7 @@ static int testSubDevEnumFrameInterval(struct node *node, unsigned which,
 	memset(&fie, 0xff, sizeof(fie));
 	fie.which = which;
 	fie.pad = pad;
+	fie.stream = 0;
 	fie.code = code;
 	fie.width = width;
 	fie.height = height;
@@ -118,6 +120,7 @@ static int testSubDevEnumFrameSize(struct node *node, unsigned which,
 	memset(&fse, 0, sizeof(fse));
 	fse.which = which;
 	fse.pad = pad;
+	fse.stream = 0;
 	fse.code = code;
 	ret = doioctl(node, VIDIOC_SUBDEV_ENUM_FRAME_SIZE, &fse);
 	node->has_subdev_enum_fsize |= (ret != ENOTTY) << which;
@@ -127,6 +130,7 @@ static int testSubDevEnumFrameSize(struct node *node, unsigned which,
 		memset(&fie, 0, sizeof(fie));
 		fie.which = which;
 		fie.pad = pad;
+		fie.stream = 0;
 		fie.code = code;
 		fail_on_test(doioctl(node, VIDIOC_SUBDEV_ENUM_FRAME_INTERVAL, &fie) != ENOTTY);
 		return ret;
@@ -142,6 +146,7 @@ static int testSubDevEnumFrameSize(struct node *node, unsigned which,
 	memset(&fse, 0xff, sizeof(fse));
 	fse.which = which;
 	fse.pad = pad;
+	fse.stream = 0;
 	fse.code = code;
 	fse.index = 0;
 	fail_on_test(doioctl(node, VIDIOC_SUBDEV_ENUM_FRAME_SIZE, &fse));
@@ -185,7 +190,7 @@ static int testSubDevEnumFrameSize(struct node *node, unsigned which,
 	return 0;
 }
 
-int testSubDevEnum(struct node *node, unsigned which, unsigned pad)
+int testSubDevEnum(struct node *node, unsigned which, unsigned pad, unsigned stream)
 {
 	struct v4l2_subdev_mbus_code_enum mbus_core_enum;
 	unsigned num_codes;
@@ -194,6 +199,7 @@ int testSubDevEnum(struct node *node, unsigned which, unsigned pad)
 	memset(&mbus_core_enum, 0, sizeof(mbus_core_enum));
 	mbus_core_enum.which = which;
 	mbus_core_enum.pad = pad;
+	mbus_core_enum.stream = stream;
 	ret = doioctl(node, VIDIOC_SUBDEV_ENUM_MBUS_CODE, &mbus_core_enum);
 	node->has_subdev_enum_code |= (ret != ENOTTY) << which;
 	if (ret == ENOTTY) {
@@ -204,8 +210,10 @@ int testSubDevEnum(struct node *node, unsigned which, unsigned pad)
 		memset(&fie, 0, sizeof(fie));
 		fse.which = which;
 		fse.pad = pad;
+		fse.stream = stream;
 		fie.which = which;
 		fie.pad = pad;
+		fie.stream = stream;
 		fail_on_test(doioctl(node, VIDIOC_SUBDEV_ENUM_FRAME_SIZE, &fse) != ENOTTY);
 		fail_on_test(doioctl(node, VIDIOC_SUBDEV_ENUM_FRAME_INTERVAL, &fie) != ENOTTY);
 		return ret;
@@ -216,16 +224,19 @@ int testSubDevEnum(struct node *node, unsigned which, unsigned pad)
 	mbus_core_enum.index = ~0;
 	fail_on_test(doioctl(node, VIDIOC_SUBDEV_ENUM_MBUS_CODE, &mbus_core_enum) != EINVAL);
 	mbus_core_enum.pad = node->entity.pads;
+	mbus_core_enum.stream = stream;
 	mbus_core_enum.index = 0;
 	fail_on_test(doioctl(node, VIDIOC_SUBDEV_ENUM_MBUS_CODE, &mbus_core_enum) != EINVAL);
 	memset(&mbus_core_enum, 0xff, sizeof(mbus_core_enum));
 	mbus_core_enum.which = which;
 	mbus_core_enum.pad = pad;
+	mbus_core_enum.stream = stream;
 	mbus_core_enum.index = 0;
 	fail_on_test(doioctl(node, VIDIOC_SUBDEV_ENUM_MBUS_CODE, &mbus_core_enum));
 	fail_on_test(check_0(mbus_core_enum.reserved, sizeof(mbus_core_enum.reserved)));
 	fail_on_test(mbus_core_enum.code == ~0U);
 	fail_on_test(mbus_core_enum.pad != pad);
+	fail_on_test(mbus_core_enum.stream != stream);
 	fail_on_test(mbus_core_enum.index);
 	fail_on_test(mbus_core_enum.which != which);
 	do {
@@ -242,6 +253,7 @@ int testSubDevEnum(struct node *node, unsigned which, unsigned pad)
 		fail_on_test(!mbus_core_enum.code);
 		fail_on_test(mbus_core_enum.which != which);
 		fail_on_test(mbus_core_enum.pad != pad);
+		fail_on_test(mbus_core_enum.stream != stream);
 		fail_on_test(mbus_core_enum.index != i);
 
 		ret = testSubDevEnumFrameSize(node, which, pad, mbus_core_enum.code);
@@ -250,7 +262,7 @@ int testSubDevEnum(struct node *node, unsigned which, unsigned pad)
 	return 0;
 }
 
-int testSubDevFrameInterval(struct node *node, unsigned pad)
+int testSubDevFrameInterval(struct node *node, unsigned pad, unsigned stream)
 {
 	struct v4l2_subdev_frame_interval fival;
 	struct v4l2_fract ival;
@@ -258,6 +270,7 @@ int testSubDevFrameInterval(struct node *node, unsigned pad)
 
 	memset(&fival, 0xff, sizeof(fival));
 	fival.pad = pad;
+	fival.stream = stream;
 	ret = doioctl(node, VIDIOC_SUBDEV_G_FRAME_INTERVAL, &fival);
 	if (ret == ENOTTY) {
 		fail_on_test(node->enum_frame_interval_pad >= 0);
@@ -269,6 +282,7 @@ int testSubDevFrameInterval(struct node *node, unsigned pad)
 	node->frame_interval_pad = pad;
 	fail_on_test(check_0(fival.reserved, sizeof(fival.reserved)));
 	fail_on_test(fival.pad != pad);
+	fail_on_test(fival.stream != stream);
 	fail_on_test(!fival.interval.numerator);
 	fail_on_test(!fival.interval.denominator);
 	fail_on_test(fival.interval.numerator == ~0U || fival.interval.denominator == ~0U);
@@ -276,20 +290,25 @@ int testSubDevFrameInterval(struct node *node, unsigned pad)
 	memset(fival.reserved, 0xff, sizeof(fival.reserved));
 	fail_on_test(doioctl(node, VIDIOC_SUBDEV_S_FRAME_INTERVAL, &fival));
 	fail_on_test(fival.pad != pad);
+	fail_on_test(fival.stream != stream);
 	fail_on_test(ival.numerator != fival.interval.numerator);
 	fail_on_test(ival.denominator != fival.interval.denominator);
 	fail_on_test(check_0(fival.reserved, sizeof(fival.reserved)));
 	memset(&fival, 0, sizeof(fival));
 	fival.pad = pad;
+	fival.stream = stream;
 	fail_on_test(doioctl(node, VIDIOC_SUBDEV_G_FRAME_INTERVAL, &fival));
 	fail_on_test(fival.pad != pad);
+	fail_on_test(fival.stream != stream);
 	fail_on_test(ival.numerator != fival.interval.numerator);
 	fail_on_test(ival.denominator != fival.interval.denominator);
 
 	fival.pad = node->entity.pads;
+	fival.stream = stream;
 	fail_on_test(doioctl(node, VIDIOC_SUBDEV_G_FRAME_INTERVAL, &fival) != EINVAL);
 	fail_on_test(doioctl(node, VIDIOC_SUBDEV_S_FRAME_INTERVAL, &fival) != EINVAL);
 	fival.pad = pad;
+	fival.stream = stream;
 	fival.interval = ival;
 	fival.interval.numerator = 0;
 	fail_on_test(doioctl(node, VIDIOC_SUBDEV_S_FRAME_INTERVAL, &fival));
@@ -326,7 +345,7 @@ static int checkMBusFrameFmt(struct node *node, struct v4l2_mbus_framefmt &fmt)
 	return 0;
 }
 
-int testSubDevFormat(struct node *node, unsigned which, unsigned pad)
+int testSubDevFormat(struct node *node, unsigned which, unsigned pad, unsigned stream)
 {
 	struct v4l2_subdev_format fmt;
 	struct v4l2_subdev_format s_fmt;
@@ -335,6 +354,7 @@ int testSubDevFormat(struct node *node, unsigned which, unsigned pad)
 	memset(&fmt, 0, sizeof(fmt));
 	fmt.which = which;
 	fmt.pad = pad;
+	fmt.stream = stream;
 	ret = doioctl(node, VIDIOC_SUBDEV_G_FMT, &fmt);
 	node->has_subdev_fmt |= (ret != ENOTTY) << which;
 	if (ret == ENOTTY) {
@@ -345,14 +365,17 @@ int testSubDevFormat(struct node *node, unsigned which, unsigned pad)
 	fail_on_test(doioctl(node, VIDIOC_SUBDEV_G_FMT, &fmt) != EINVAL);
 	fmt.which = 0;
 	fmt.pad = node->entity.pads;
+	fmt.stream = stream;
 	fail_on_test(doioctl(node, VIDIOC_SUBDEV_G_FMT, &fmt) != EINVAL);
 	memset(&fmt, 0xff, sizeof(fmt));
 	fmt.which = which;
 	fmt.pad = pad;
+	fmt.stream = stream;
 	fail_on_test(doioctl(node, VIDIOC_SUBDEV_G_FMT, &fmt));
 	fail_on_test(check_0(fmt.reserved, sizeof(fmt.reserved)));
 	fail_on_test(fmt.which != which);
 	fail_on_test(fmt.pad != pad);
+	fail_on_test(fmt.stream != stream);
 	fail_on_test(checkMBusFrameFmt(node, fmt.format));
 	s_fmt = fmt;
 	memset(s_fmt.reserved, 0xff, sizeof(s_fmt.reserved));
@@ -361,6 +384,7 @@ int testSubDevFormat(struct node *node, unsigned which, unsigned pad)
 	fail_on_test(ret && ret != ENOTTY);
 	fail_on_test(s_fmt.which != which);
 	fail_on_test(s_fmt.pad != pad);
+	fail_on_test(s_fmt.stream != stream);
 	if (ret) {
 		warn("VIDIOC_SUBDEV_G_FMT is supported but not VIDIOC_SUBDEV_S_FMT\n");
 		return 0;
@@ -405,7 +429,7 @@ static target_info targets[] = {
 	{ ~0U },
 };
 
-int testSubDevSelection(struct node *node, unsigned which, unsigned pad)
+int testSubDevSelection(struct node *node, unsigned which, unsigned pad, unsigned stream)
 {
 	struct v4l2_subdev_selection sel;
 	struct v4l2_subdev_selection s_sel;
@@ -417,10 +441,12 @@ int testSubDevSelection(struct node *node, unsigned which, unsigned pad)
 	targets[V4L2_SEL_TGT_NATIVE_SIZE].readonly = is_sink;
 	memset(&crop, 0, sizeof(crop));
 	crop.pad = pad;
+	crop.stream = stream;
 	crop.which = which;
 	memset(&sel, 0, sizeof(sel));
 	sel.which = which;
 	sel.pad = pad;
+	sel.stream = stream;
 	sel.target = V4L2_SEL_TGT_CROP;
 	ret = doioctl(node, VIDIOC_SUBDEV_G_SELECTION, &sel);
 	node->has_subdev_selection |= (ret != ENOTTY) << which;
@@ -433,6 +459,7 @@ int testSubDevSelection(struct node *node, unsigned which, unsigned pad)
 	fail_on_test(check_0(crop.reserved, sizeof(crop.reserved)));
 	fail_on_test(crop.which != which);
 	fail_on_test(crop.pad != pad);
+	fail_on_test(crop.stream != stream);
 	fail_on_test(memcmp(&crop.rect, &sel.r, sizeof(sel.r)));
 
 	for (unsigned tgt = 0; targets[tgt].target != ~0U; tgt++) {
@@ -440,6 +467,7 @@ int testSubDevSelection(struct node *node, unsigned which, unsigned pad)
 		memset(&sel, 0xff, sizeof(sel));
 		sel.which = which;
 		sel.pad = pad;
+		sel.stream = stream;
 		sel.target = tgt;
 		ret = doioctl(node, VIDIOC_SUBDEV_G_SELECTION, &sel);
 		targets[tgt].found = !ret;
@@ -451,6 +479,7 @@ int testSubDevSelection(struct node *node, unsigned which, unsigned pad)
 		fail_on_test(check_0(sel.reserved, sizeof(sel.reserved)));
 		fail_on_test(sel.which != which);
 		fail_on_test(sel.pad != pad);
+		fail_on_test(sel.stream != stream);
 		fail_on_test(sel.target != tgt);
 		fail_on_test(!sel.r.width);
 		fail_on_test(sel.r.width == ~0U);
@@ -462,9 +491,11 @@ int testSubDevSelection(struct node *node, unsigned which, unsigned pad)
 		fail_on_test(doioctl(node, VIDIOC_SUBDEV_G_SELECTION, &sel) != EINVAL);
 		sel.which = 0;
 		sel.pad = node->entity.pads;
+		sel.stream = stream;
 		fail_on_test(doioctl(node, VIDIOC_SUBDEV_G_SELECTION, &sel) != EINVAL);
 		sel.which = which;
 		sel.pad = pad;
+		sel.stream = stream;
 		s_sel = sel;
 		memset(s_sel.reserved, 0xff, sizeof(s_sel.reserved));
 		ret = doioctl(node, VIDIOC_SUBDEV_S_SELECTION, &s_sel);
@@ -476,12 +507,14 @@ int testSubDevSelection(struct node *node, unsigned which, unsigned pad)
 				fail_on_test(check_0(crop.reserved, sizeof(crop.reserved)));
 				fail_on_test(crop.which != which);
 				fail_on_test(crop.pad != pad);
+				fail_on_test(crop.stream != stream);
 				fail_on_test(memcmp(&crop.rect, &sel.r, sizeof(sel.r)));
 			}
 		}
 		fail_on_test(!ret && targets[tgt].readonly);
 		fail_on_test(s_sel.which != which);
 		fail_on_test(s_sel.pad != pad);
+		fail_on_test(s_sel.stream != stream);
 		if (ret && !targets[tgt].readonly && tgt != V4L2_SEL_TGT_NATIVE_SIZE)
 			warn("VIDIOC_SUBDEV_G_SELECTION is supported for target %u but not VIDIOC_SUBDEV_S_SELECTION\n", tgt);
 		if (ret)
