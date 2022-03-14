@@ -1158,7 +1158,7 @@ void testNode(struct node &node, struct node &node_m2m_cap, struct node &expbuf_
 		bool has_sink = false;
 		struct v4l2_subdev_routing sd_routing[2] = {};
 		struct v4l2_subdev_route sd_routes[2][256] = {};
-		bool has_routes = !!(subdevcap.capabilities & V4L2_SUBDEV_CAP_MPLEXED);
+		bool has_routes = false; /* HACK */
 		int ret;
 
 		node.frame_interval_pad = -1;

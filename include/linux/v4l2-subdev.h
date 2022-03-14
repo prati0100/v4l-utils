@@ -205,6 +205,11 @@ struct v4l2_subdev_capability {
 /* The v4l2 sub-device supports multiplexed streams. */
 #define V4L2_SUBDEV_CAP_MPLEXED         0x00000002
 
+/* HACK. This should be defined in some better place. */
+#ifndef _BITUL
+#define _BITUL(x) (1U << (x))
+#endif
+
 /*
  * Is the route active? An active route will start when streaming is enabled
  * on a video node.
